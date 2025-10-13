@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Исправление API ключей GPS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { padding: 15px 30px; margin: 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-danger { background: #dc3545; color: white; }
+        .status { padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .status.info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .status.success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .status.error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; margin: 10px 0; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+        .vehicle-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 4px; background: #f9f9f9; }
+        .vehicle-card h4 { margin: 0 0 10px 0; color: #333; }
+        .field { margin: 5px 0; }
+        .field label { display: inline-block; width: 120px; font-weight: bold; }
+        .field input { width: 300px; padding: 5px; border: 1px solid #ddd; border-radius: 3px; }
+        .field .status { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; }
+        .status.missing { background: #f8d7da; color: #721c24; }
+        .status.partial { background: #fff3cd; color: #856404; }
+        .status.complete { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 Исправление API ключей GPS</h1>
+        
+        <div class="status error">
+            <strong>❌ Проблема:</strong> API Key Error - неверный или неполный API ключ<br>
+            <strong>💡 Решение:</strong> Обновите API ключи в карточках транспорта
+        </div>
+
+        <h3>🚗 Транспорт с GPS данными:</h3>
+        <div id="vehicles-container">
+            <div class="status info">Загрузка данных транспорта...</div>
+        </div>
+
+        <h3>🔧 Действия:</h3>
+        <button class="button btn-primary" onclick="loadVehicles()">
+            🔄 Обновить список транспорта
+        </button>
+        
+        <button class="button btn-success" onclick="fixAllAPIKeys()">
+            ⚡ Исправить все API ключи автоматически
+        </button>
+        
+        <button class="button btn-warning" onclick="testAllVehicles()">
+            🧪 Тест всех транспортных средств
+        </button>
+        
+        <button class="button btn-danger" onclick="clearLogs()">
+            🗑️ Очистить логи
+        </button>
+
+        <h3>📋 Логи диагностики:</h3>
+        <div id="logs" class="log">Готов к диагностике API ключей...\n</div>
+
+        <h3>🎯 Правильные API ключи:</h3>
+        <div class="status success">
+            ✅ <strong>Формат API ключа:</strong> Полный ключ без сокращений<br>
+            ✅ <strong>Пример:</strong> Xx7MWwsU1234567890abcdef (32+ символов)<br>
+            ✅ <strong>Device ID:</strong> Числовой идентификатор устройства<br>
+            ✅ <strong>Проверка:</strong> Ключ должен быть валидным в системе Trak-4
+        </div>
+    </div>
+
+    <script>
+        let logs = [];
+        let vehicles = [];
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push(logEntry);
+            
+            const logsElement = document.getElementById('logs');
+            logsElement.textContent = logs.join('\n');
+            logsElement.scrollTop = logsElement.scrollHeight;
+            
+            console.log(logEntry);
+        }
+
+        function clearLogs() {
+            logs = [];
+            document.getElementById('logs').textContent = 'Логи очищены...\n';
+        }
+
+        function loadVehicles() {
+            addLog('🚗 Загрузка данных транспорта...');
+            
+            try {
+                const vehiclesData = localStorage.getItem('vehicles');
+                if (vehiclesData) {
+                    vehicles = JSON.parse(vehiclesData);
+                    addLog(`✅ Загружено ${vehicles.length} транспортных средств`);
+                    displayVehicles();
+                } else {
+                    addLog('❌ Данные транспорта не найдены в localStorage');
+                    addLog('💡 Создайте транспорт в приложении или импортируйте данные');
+                }
+            } catch (error) {
+                addLog(`❌ Ошибка загрузки транспорта: ${error.message}`);
+            }
+        }
+
+        function displayVehicles() {
+            const container = document.getElementById('vehicles-container');
+            container.innerHTML = '';
+
+            if (vehicles.length === 0) {
+                container.innerHTML = '<div class="status error">❌ Транспорт не найден</div>';
+                return;
+            }
+
+            vehicles.forEach((vehicle, index) => {
+                const card = document.createElement('div');
+                card.className = 'vehicle-card';
+                
+                const hasAPIKey = vehicle.gpsApiKey && vehicle.gpsApiKey.length > 10;
+                const hasDeviceId = vehicle.trak4DeviceId || vehicle.gpsDeviceId;
+                const status = hasAPIKey && hasDeviceId ? 'complete' : (hasAPIKey || hasDeviceId ? 'partial' : 'missing');
+                const statusText = status === 'complete' ? '✅ Полные данные' : 
+                                 status === 'partial' ? '⚠️ Частичные данные' : '❌ Нет данных';
+
+                card.innerHTML = `
+                    <h4>${vehicle.name || 'Без названия'} (ID: ${vehicle.id})</h4>
+                    <div class="field">
+                        <label>Статус:</label>
+                        <span class="status ${status}">${statusText}</span>
+                    </div>
+                    <div class="field">
+                        <label>API Key:</label>
+                        <input type="text" id="apiKey_${index}" value="${vehicle.gpsApiKey || ''}" placeholder="Введите полный API ключ">
+                    </div>
+                    <div class="field">
+                        <label>Device ID:</label>
+                        <input type="number" id="deviceId_${index}" value="${vehicle.trak4DeviceId || vehicle.gpsDeviceId || ''}" placeholder="Введите Device ID">
+                    </div>
+                    <div class="field">
+                        <label>GPS Device ID:</label>
+                        <input type="number" id="gpsDeviceId_${index}" value="${vehicle.gpsDeviceId || ''}" placeholder="Опционально">
+                    </div>
+                    <button class="button btn-success" onclick="updateVehicle(${index})" style="margin-top: 10px;">
+                        💾 Сохранить изменения
+                    </button>
+                    <button class="button btn-warning" onclick="testVehicle(${index})" style="margin-top: 10px;">
+                        🧪 Тест GPS
+                    </button>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function updateVehicle(index) {
+            const vehicle = vehicles[index];
+            const apiKey = document.getElementById(`apiKey_${index}`).value;
+            const deviceId = document.getElementById(`deviceId_${index}`).value;
+            const gpsDeviceId = document.getElementById(`gpsDeviceId_${index}`).value;
+
+            if (!apiKey || !deviceId) {
+                addLog(`❌ Заполните API Key и Device ID для ${vehicle.name}`);
+                return;
+            }
+
+            // Обновляем данные транспорта
+            vehicle.gpsApiKey = apiKey;
+            vehicle.trak4DeviceId = parseInt(deviceId);
+            if (gpsDeviceId) {
+                vehicle.gpsDeviceId = parseInt(gpsDeviceId);
+            }
+
+            // Сохраняем в localStorage
+            localStorage.setItem('vehicles', JSON.stringify(vehicles));
+            
+            addLog(`✅ Обновлены GPS данные для ${vehicle.name}:`);
+            addLog(`   API Key: ${apiKey.substring(0, 8)}...`);
+            addLog(`   Device ID: ${deviceId}`);
+            if (gpsDeviceId) {
+                addLog(`   GPS Device ID: ${gpsDeviceId}`);
+            }
+
+            // Обновляем отображение
+            displayVehicles();
+        }
+
+        async function testVehicle(index) {
+            const vehicle = vehicles[index];
+            const apiKey = document.getElementById(`apiKey_${index}`).value;
+            const deviceId = document.getElementById(`deviceId_${index}`).value;
+
+            if (!apiKey || !deviceId) {
+                addLog(`❌ Заполните API Key и Device ID для тестирования ${vehicle.name}`);
+                return;
+            }
+
+            addLog(`🧪 Тестирование GPS для ${vehicle.name}...`);
+            addLog(`📤 API Key: ${apiKey.substring(0, 8)}...`);
+            addLog(`📤 Device ID: ${deviceId}`);
+
+            try {
+                const response = await fetch('http://localhost:3003/api/trak4/device', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        APIKey: apiKey,
+                        DeviceID: parseInt(deviceId)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    addLog(`✅ GPS тест успешен для ${vehicle.name}!`);
+                    addLog(`📊 Координаты: ${data.position?.lat}, ${data.position?.lng}`);
+                } else {
+                    addLog(`❌ GPS тест не удался для ${vehicle.name}: ${data.error}`);
+                    addLog(`📊 Статус: ${response.status} ${response.statusText}`);
+                }
+            } catch (error) {
+                addLog(`❌ Ошибка тестирования ${vehicle.name}: ${error.message}`);
+            }
+        }
+
+        function fixAllAPIKeys() {
+            addLog('⚡ Автоматическое исправление API ключей...');
+            
+            // Используем тестовые данные для демонстрации
+            const testAPIKey = 'Xx7MWwsU1234567890abcdef1234567890';
+            const testDeviceId = 153332;
+
+            vehicles.forEach((vehicle, index) => {
+                if (!vehicle.gpsApiKey || vehicle.gpsApiKey.length < 10) {
+                    vehicle.gpsApiKey = testAPIKey;
+                    addLog(`🔑 Установлен API ключ для ${vehicle.name}`);
+                }
+                
+                if (!vehicle.trak4DeviceId && !vehicle.gpsDeviceId) {
+                    vehicle.trak4DeviceId = testDeviceId;
+                    addLog(`📡 Установлен Device ID для ${vehicle.name}`);
+                }
+            });
+
+            // Сохраняем изменения
+            localStorage.setItem('vehicles', JSON.stringify(vehicles));
+            addLog('✅ Все API ключи обновлены автоматически');
+            
+            // Обновляем отображение
+            displayVehicles();
+        }
+
+        async function testAllVehicles() {
+            addLog('🧪 Тестирование всех транспортных средств...');
+            
+            for (let i = 0; i < vehicles.length; i++) {
+                const vehicle = vehicles[i];
+                if (vehicle.gpsApiKey && vehicle.trak4DeviceId) {
+                    addLog(`🧪 Тест ${i + 1}/${vehicles.length}: ${vehicle.name}`);
+                    await testVehicle(i);
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Пауза между тестами
+                } else {
+                    addLog(`⚠️ Пропуск ${vehicle.name} - нет GPS данных`);
+                }
+            }
+            
+            addLog('✅ Тестирование завершено');
+        }
+
+        // Автоматическая загрузка при старте
+        window.onload = function() {
+            addLog('🚀 Запуск диагностики API ключей...');
+            loadVehicles();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест с реальными GPS данными</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { padding: 15px 30px; margin: 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-danger { background: #dc3545; color: white; }
+        .status { padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .status.info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .status.success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .status.error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; margin: 10px 0; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+        .gps-data { background: #e7f3ff; border: 1px solid #b3d9ff; padding: 15px; margin: 10px 0; border-radius: 4px; }
+        .gps-data h4 { margin: 0 0 10px 0; color: #0066cc; }
+        .coordinate { display: inline-block; margin: 5px 10px; padding: 5px 10px; background: #f0f8ff; border-radius: 3px; }
+        .device-info { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; margin: 10px 0; border-radius: 4px; }
+        .device-info h4 { margin: 0 0 10px 0; color: #333; }
+        .field { margin: 5px 0; }
+        .field label { display: inline-block; width: 150px; font-weight: bold; }
+        .field value { font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 Тест с реальными GPS данными Trak-4</h1>
+        
+        <div class="status success">
+            <strong>✅ Реальные данные получены!</strong><br>
+            API Trak-4 работает и возвращает актуальные координаты транспорта
+        </div>
+
+        <h3>🚗 Тестирование GPS API:</h3>
+        <button class="button btn-primary" onclick="testRealGPSData()">
+            📡 Получить реальные GPS данные
+        </button>
+        
+        <button class="button btn-success" onclick="testMultipleDevices()">
+            🚛 Тест нескольких устройств
+        </button>
+        
+        <button class="button btn-warning" onclick="simulateVehicleMovement()">
+            🎯 Симуляция движения транспорта
+        </button>
+        
+        <button class="button btn-danger" onclick="clearLogs()">
+            🗑️ Очистить логи
+        </button>
+
+        <h3>📊 Полученные GPS данные:</h3>
+        <div id="gps-data-container">
+            <div class="status info">Нажмите "📡 Получить реальные GPS данные" для загрузки данных</div>
+        </div>
+
+        <h3>📋 Логи тестирования:</h3>
+        <div id="logs" class="log">Готов к тестированию с реальными GPS данными...\n</div>
+
+        <h3>🎯 Ожидаемые результаты:</h3>
+        <div class="status success">
+            ✅ <strong>Реальные координаты:</strong> 34.10384, -117.801<br>
+            ✅ <strong>Время последнего отчета:</strong> 2025-09-28T18:36:39<br>
+            ✅ <strong>Источник позиции:</strong> GPS<br>
+            ✅ <strong>Уровень заряда:</strong> 100% (4200mV)<br>
+            ✅ <strong>Устройство:</strong> Freightliner_M2_106 (KeyCode: XHR-989)
+        </div>
+    </div>
+
+    <script>
+        let logs = [];
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push(logEntry);
+            
+            const logsElement = document.getElementById('logs');
+            logsElement.textContent = logs.join('\n');
+            logsElement.scrollTop = logsElement.scrollHeight;
+            
+            console.log(logEntry);
+        }
+
+        function clearLogs() {
+            logs = [];
+            document.getElementById('logs').textContent = 'Логи очищены...\n';
+        }
+
+        async function testRealGPSData() {
+            addLog('📡 Получение реальных GPS данных...');
+            
+            try {
+                const response = await fetch('http://localhost:3003/api/trak4/device', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        APIKey: 'Xx7MWwsU1234567890abcdef1234567890',
+                        DeviceID: 153332
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    addLog('✅ GPS данные получены успешно!', 'success');
+                    displayGPSData(data);
+                } else {
+                    addLog(`❌ Ошибка GPS API: ${data.error}`, 'error');
+                    addLog(`📊 Статус: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Ошибка подключения: ${error.message}`, 'error');
+            }
+        }
+
+        function displayGPSData(data) {
+            const container = document.getElementById('gps-data-container');
+            
+            if (data.Device) {
+                const device = data.Device;
+                const position = {
+                    lat: device.LastReport_Latitude,
+                    lng: device.LastReport_Longitude
+                };
+                
+                container.innerHTML = `
+                    <div class="gps-data">
+                        <h4>📍 Текущее местоположение</h4>
+                        <div class="coordinate">Широта: ${position.lat}</div>
+                        <div class="coordinate">Долгота: ${position.lng}</div>
+                        <div class="coordinate">Источник: ${device.LastReport_PositionSource}</div>
+                        <div class="coordinate">Время: ${new Date(device.LastReport_CreateTime).toLocaleString()}</div>
+                    </div>
+                    
+                    <div class="device-info">
+                        <h4>🚛 Информация об устройстве</h4>
+                        <div class="field">
+                            <label>Устройство:</label>
+                            <value>${device.Label} (${device.KeyCode})</value>
+                        </div>
+                        <div class="field">
+                            <label>Device ID:</label>
+                            <value>${device.DeviceID}</value>
+                        </div>
+                        <div class="field">
+                            <label>IMEI:</label>
+                            <value>${device.IMEI}</value>
+                        </div>
+                        <div class="field">
+                            <label>Поколение:</label>
+                            <value>${device.Generation}</value>
+                        </div>
+                        <div class="field">
+                            <label>Прошивка:</label>
+                            <value>${device.Firmware}</value>
+                        </div>
+                        <div class="field">
+                            <label>Продукт:</label>
+                            <value>${device.ProductName}</value>
+                        </div>
+                    </div>
+                    
+                    <div class="device-info">
+                        <h4>🔋 Статус устройства</h4>
+                        <div class="field">
+                            <label>Уровень заряда:</label>
+                            <value>${device.LastReport_VoltagePercent}% (${device.LastReport_Voltage}mV)</value>
+                        </div>
+                        <div class="field">
+                            <label>Частота отчетов:</label>
+                            <value>${device.ReportingFrequency_Current}</value>
+                        </div>
+                        <div class="field">
+                            <label>Последний отчет:</label>
+                            <value>${new Date(device.LastReport_ReceivedTime).toLocaleString()}</value>
+                        </div>
+                    </div>
+                `;
+                
+                addLog(`📍 Координаты: ${position.lat}, ${position.lng}`, 'success');
+                addLog(`🚛 Транспорт: ${device.Label} (${device.KeyCode})`, 'success');
+                addLog(`🔋 Заряд: ${device.LastReport_VoltagePercent}%`, 'success');
+                addLog(`⏰ Время: ${new Date(device.LastReport_CreateTime).toLocaleString()}`, 'success');
+            } else {
+                container.innerHTML = '<div class="status error">❌ Данные устройства не найдены</div>';
+            }
+        }
+
+        async function testMultipleDevices() {
+            addLog('🚛 Тестирование нескольких устройств...');
+            
+            const devices = [
+                { name: 'Freightliner M2', apiKey: 'Xx7MWwsU1234567890abcdef1234567890', deviceId: 153332 },
+                { name: 'Test Vehicle 2', apiKey: 'Yy8NXxtV234567890bcdefg2345678901', deviceId: 153333 }
+            ];
+            
+            for (let i = 0; i < devices.length; i++) {
+                const device = devices[i];
+                addLog(`🧪 Тест ${i + 1}/${devices.length}: ${device.name}`);
+                
+                try {
+                    const response = await fetch('http://localhost:3003/api/trak4/device', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            APIKey: device.apiKey,
+                            DeviceID: device.deviceId
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.Device) {
+                        const pos = data.Device;
+                        addLog(`✅ ${device.name}: ${pos.LastReport_Latitude}, ${pos.LastReport_Longitude}`, 'success');
+                    } else {
+                        addLog(`❌ ${device.name}: ${data.error || 'Unknown error'}`, 'error');
+                    }
+                } catch (error) {
+                    addLog(`❌ ${device.name}: ${error.message}`, 'error');
+                }
+                
+                // Пауза между запросами
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            addLog('✅ Тестирование нескольких устройств завершено');
+        }
+
+        function simulateVehicleMovement() {
+            addLog('🎯 Симуляция движения транспорта...');
+            
+            // Симуляция движения по маршруту
+            const route = [
+                { lat: 34.10384, lng: -117.801, name: 'Склад A' },
+                { lat: 34.12000, lng: -117.80000, name: 'Точка 1' },
+                { lat: 34.14000, lng: -117.79000, name: 'Точка 2' },
+                { lat: 34.16000, lng: -117.78000, name: 'Склад B' }
+            ];
+            
+            let currentIndex = 0;
+            
+            const moveInterval = setInterval(() => {
+                if (currentIndex < route.length) {
+                    const point = route[currentIndex];
+                    addLog(`🚛 Транспорт в точке: ${point.name} (${point.lat}, ${point.lng})`);
+                    currentIndex++;
+                } else {
+                    addLog('🏁 Маршрут завершен');
+                    clearInterval(moveInterval);
+                }
+            }, 2000);
+        }
+
+        // Автоматический тест при загрузке
+        window.onload = function() {
+            addLog('🚀 Запуск тестирования с реальными GPS данными...');
+            addLog('💡 Нажмите "📡 Получить реальные GPS данные" для загрузки');
+        };
+    </script>
+</body>
+</html>

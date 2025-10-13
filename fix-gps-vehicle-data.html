@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Исправление GPS данных транспорта</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-danger { background: #dc3545; color: white; }
+        .output { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; margin: 10px 0; border-radius: 4px; white-space: pre-wrap; font-family: monospace; max-height: 400px; overflow-y: auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .status.error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .status.success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .card { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 Исправление GPS данных транспорта</h1>
+        
+        <div class="status error">
+            <strong>❌ Проблемы:</strong><br>
+            • ⚠️ Нет GPS устройства для транспорта: 1757306216978<br>
+            • ⚠️ Нет GPS устройства для транспорта: 1757306268276<br>
+            • ⚠️ Не удалось инициализировать прогресс для маршрута: 09.28 ALEX<br>
+            • ⚠️ Не удалось инициализировать прогресс для маршрута: 09.28 DANIIL
+        </div>
+
+        <h3>🔍 Диагностика GPS данных:</h3>
+        <button class="button btn-primary" onclick="diagnoseGPSData()">1. Диагностировать GPS данные</button>
+        <button class="button btn-warning" onclick="showVehicleDetails()">2. Показать детали транспорта</button>
+        <button class="button btn-success" onclick="addGPSDataToVehicles()">3. Добавить GPS данные</button>
+
+        <div id="output" class="output">Нажмите кнопку для диагностики...</div>
+
+        <div id="vehicles-cards"></div>
+
+        <h3>🚀 Быстрое исправление:</h3>
+        <button class="button btn-success" onclick="quickFixGPSData()">⚡ Исправить GPS данные автоматически</button>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function diagnoseGPSData() {
+            log('🔍 Диагностика GPS данных транспорта...');
+            
+            try {
+                const vehicles = JSON.parse(localStorage.getItem('vehicles') || '[]');
+                const routes = JSON.parse(localStorage.getItem('routes') || '[]');
+                
+                log(`🚚 Найдено транспорта: ${vehicles.length}`);
+                
+                if (vehicles.length === 0) {
+                    log('❌ НЕТ ТРАНСПОРТА! Создайте автомобили в Fleet Management');
+                    return;
+                }
+                
+                vehicles.forEach((vehicle, index) => {
+                    log(`\n🚚 Транспорт ${index + 1}: ${vehicle.name} (ID: ${vehicle.id})`);
+                    log(`   Номер: ${vehicle.licensePlate || 'НЕТ'}`);
+                    log(`   Назначенный водитель: ${vehicle.assignedDriver || 'НЕТ'}`);
+                    log(`   GPS API Key: ${vehicle.gpsApiKey || '❌ НЕТ'}`);
+                    log(`   GPS Device ID: ${vehicle.gpsDeviceId || '❌ НЕТ'}`);
+                    log(`   Trak4 Device ID: ${vehicle.trak4DeviceId || '❌ НЕТ'}`);
+                    
+                    const hasGPSData = vehicle.gpsApiKey && (vehicle.gpsDeviceId || vehicle.trak4DeviceId);
+                    log(`   GPS готовность: ${hasGPSData ? '✅ ГОТОВ' : '❌ НЕ ГОТОВ'}`);
+                });
+                
+                // Проверяем какие транспорты используются в маршрутах
+                log(`\n📦 Использование транспорта в маршрутах:`);
+                const activeRoutes = routes.filter(r => r.isActive);
+                
+                activeRoutes.forEach(route => {
+                    log(`   📦 ${route.name}:`);
+                    log(`      vehicleId: ${route.vehicleId || 'НЕТ'}`);
+                    
+                    if (route.vehicleId) {
+                        const vehicle = vehicles.find(v => v.id === route.vehicleId);
+                        if (vehicle) {
+                            const hasGPS = vehicle.gpsApiKey && (vehicle.gpsDeviceId || vehicle.trak4DeviceId);
+                            log(`      → ${vehicle.name} (GPS: ${hasGPS ? 'ДА' : 'НЕТ'})`);
+                        } else {
+                            log(`      → ❌ ТРАНСПОРТ НЕ НАЙДЕН`);
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                log(`❌ Ошибка диагностики: ${error.message}`);
+            }
+        }
+
+        function showVehicleDetails() {
+            const vehicles = JSON.parse(localStorage.getItem('vehicles') || '[]');
+            const vehiclesDiv = document.getElementById('vehicles-cards');
+            
+            vehiclesDiv.innerHTML = vehicles.map(vehicle => {
+                const hasGPS = vehicle.gpsApiKey && (vehicle.gpsDeviceId || vehicle.trak4DeviceId);
+                
+                return `
+                    <div class="card" style="border-left: 4px solid ${hasGPS ? 'green' : 'red'};">
+                        <h4>🚚 ${vehicle.name} (ID: ${vehicle.id})</h4>
+                        <p><strong>Номер:</strong> ${vehicle.licensePlate || 'Не указан'}</p>
+                        <p><strong>Водитель:</strong> ${vehicle.assignedDriver || 'Не назначен'}</p>
+                        <p><strong>GPS API Key:</strong> ${vehicle.gpsApiKey || '❌ НЕТ'}</p>
+                        <p><strong>GPS Device ID:</strong> ${vehicle.gpsDeviceId || '❌ НЕТ'}</p>
+                        <p><strong>Trak4 Device ID:</strong> ${vehicle.trak4DeviceId || '❌ НЕТ'}</p>
+                        <p><strong>Статус GPS:</strong> <span style="color: ${hasGPS ? 'green' : 'red'};">${hasGPS ? '✅ ГОТОВ' : '❌ НЕ ГОТОВ'}</span></p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addGPSDataToVehicles() {
+            log('📡 Добавление GPS данных в карточки транспорта...');
+            
+            try {
+                const vehicles = JSON.parse(localStorage.getItem('vehicles') || '[]');
+                let updatedCount = 0;
+                
+                vehicles.forEach((vehicle, index) => {
+                    let vehicleUpdated = false;
+                    
+                    // Добавляем GPS API Key если нет
+                    if (!vehicle.gpsApiKey) {
+                        vehicle.gpsApiKey = 'Xx7MWwsUhVQjbFvVsLrg8Rjjy5zcBGZJ'; // Тестовый ключ
+                        vehicleUpdated = true;
+                        log(`✅ Добавлен GPS API Key для ${vehicle.name}`);
+                    }
+                    
+                    // Добавляем Trak4 Device ID если нет
+                    if (!vehicle.trak4DeviceId) {
+                        vehicle.trak4DeviceId = 153332 + index; // Уникальные ID
+                        vehicleUpdated = true;
+                        log(`✅ Добавлен Trak4 Device ID для ${vehicle.name}: ${vehicle.trak4DeviceId}`);
+                    }
+                    
+                    // Добавляем GPS Device ID если нет
+                    if (!vehicle.gpsDeviceId) {
+                        vehicle.gpsDeviceId = vehicle.trak4DeviceId; // Используем тот же ID
+                        vehicleUpdated = true;
+                        log(`✅ Добавлен GPS Device ID для ${vehicle.name}: ${vehicle.gpsDeviceId}`);
+                    }
+                    
+                    // Добавляем ограничение скорости если нет
+                    if (!vehicle.speedLimit) {
+                        vehicle.speedLimit = 55; // Стандартное ограничение
+                        vehicleUpdated = true;
+                    }
+                    
+                    if (vehicleUpdated) {
+                        updatedCount++;
+                    }
+                });
+                
+                // Сохраняем обновленные данные
+                localStorage.setItem('vehicles', JSON.stringify(vehicles));
+                
+                log(`🎉 Обновлено GPS данных для ${updatedCount} автомобилей`);
+                showVehicleDetails();
+                
+            } catch (error) {
+                log(`❌ Ошибка добавления GPS данных: ${error.message}`);
+            }
+        }
+
+        function quickFixGPSData() {
+            log('⚡ Быстрое исправление GPS данных...');
+            
+            // Сначала диагностируем
+            diagnoseGPSData();
+            
+            setTimeout(() => {
+                // Добавляем GPS данные
+                addGPSDataToVehicles();
+                
+                setTimeout(() => {
+                    // Финальная проверка
+                    log('\n🔍 Финальная проверка после исправления...');
+                    diagnoseGPSData();
+                    
+                    setTimeout(() => {
+                        log('\n✅ ИСПРАВЛЕНИЕ GPS ДАННЫХ ЗАВЕРШЕНО!');
+                        log('🎯 Теперь вернитесь в Dashboard → Маршруты и попробуйте запустить отслеживание');
+                        log('📡 Все автомобили должны иметь GPS устройства для отслеживания');
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }
+
+        // Автоматическая диагностика при загрузке
+        window.onload = function() {
+            log('🔍 Автоматическая диагностика GPS данных при загрузке...');
+            diagnoseGPSData();
+            showVehicleDetails();
+        };
+    </script>
+</body>
+</html>

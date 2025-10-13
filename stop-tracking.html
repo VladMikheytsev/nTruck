@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Остановка отслеживания</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { padding: 15px 30px; margin: 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .status { padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .status.error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .status.success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛑 Остановка циклических ошибок отслеживания</h1>
+        
+        <div class="status error">
+            <strong>❌ Проблема:</strong><br>
+            Циклические ошибки "Транспорт не найден" каждые 30 секунд<br>
+            Система пытается обработать GPS для несуществующих ID транспорта
+        </div>
+
+        <h3>🚀 Быстрое решение:</h3>
+        <button class="button btn-danger" onclick="stopAllTracking()">
+            🛑 Остановить все отслеживание
+        </button>
+        
+        <button class="button btn-success" onclick="clearAndReload()">
+            🔄 Очистить данные и перезагрузить
+        </button>
+
+        <div id="result" class="status" style="display: none;"></div>
+    </div>
+
+    <script>
+        function showResult(message, isSuccess = true) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `status ${isSuccess ? 'success' : 'error'}`;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+        }
+
+        function stopAllTracking() {
+            try {
+                // Очищаем все интервалы отслеживания
+                for (let i = 1; i < 99999; i++) {
+                    clearInterval(i);
+                }
+                
+                // Очищаем все данные отслеживания
+                const today = new Date().toISOString().split('T')[0];
+                
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('actual_route_')) {
+                        localStorage.removeItem(key);
+                    }
+                }
+                
+                localStorage.removeItem('gps_tracking_logs');
+                
+                showResult(`
+                    ✅ Все отслеживание остановлено!<br>
+                    ✅ Циклические ошибки прекращены<br>
+                    ✅ Данные отслеживания очищены<br><br>
+                    🎯 Теперь вернитесь в Dashboard и попробуйте запустить отслеживание заново
+                `);
+                
+            } catch (error) {
+                showResult(`❌ Ошибка остановки: ${error.message}`, false);
+            }
+        }
+
+        function clearAndReload() {
+            stopAllTracking();
+            
+            setTimeout(() => {
+                showResult(`
+                    ✅ Данные очищены!<br>
+                    🔄 Перезагрузка страницы через 3 секунды...
+                `);
+                
+                setTimeout(() => {
+                    window.location.href = 'http://localhost:3000';
+                }, 3000);
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

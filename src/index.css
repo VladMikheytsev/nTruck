@@ -1,0 +1,214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 h-10 px-4 py-2;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-gray-100 text-gray-900 hover:bg-gray-200 h-10 px-4 py-2;
+  }
+  
+  .input {
+    @apply flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .card {
+    @apply rounded-lg border border-gray-200 bg-white text-gray-950 shadow-sm;
+  }
+}
+
+/* Google Maps Autocomplete Styling */
+.pac-container {
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  font-family: inherit;
+  z-index: 9999;
+}
+
+.pac-item {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.pac-item:hover {
+  background-color: #f9fafb;
+}
+
+.pac-item-selected {
+  background-color: #eff6ff;
+}
+
+.pac-item-query {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.pac-matched {
+  font-weight: 700;
+  color: #2563eb;
+}
+
+/* Work Schedule Table Styles */
+.schedule-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.schedule-table th,
+.schedule-table td {
+  border: 1px solid #e5e7eb;
+}
+
+.schedule-table th {
+  background-color: #f9fafb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.schedule-table .driver-cell {
+  background-color: inherit;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  min-width: 200px;
+}
+
+.schedule-table tbody tr:hover {
+  background-color: #f3f4f6;
+}
+
+.shift-cell:hover {
+  background-color: #dbeafe !important;
+  transition: background-color 0.2s;
+}
+
+/* Vertical Route Timeline Styles */
+.vertical-timeline {
+  position: relative;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #d1d5db;
+}
+
+.timeline-marker::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 4px;
+  height: 4px;
+  background-color: #6b7280;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.route-stop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.route-stop:hover {
+  transform: translateX(4px);
+  box-shadow: 0 8px 25px -8px rgba(59, 130, 246, 0.5);
+}
+
+.route-stop::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid #3b82f6;
+  transform: translateY(-50%);
+}
+
+/* New Google Places PlaceAutocompleteElement Styling */
+gmp-place-autocomplete {
+  --gmp-place-autocomplete-font-family: inherit !important;
+  --gmp-place-autocomplete-font-size: 14px !important;
+  --gmp-place-autocomplete-border-color: #d1d5db !important;
+  --gmp-place-autocomplete-border-radius: 6px !important;
+  --gmp-place-autocomplete-background-color: #ffffff !important;
+  --gmp-place-autocomplete-text-color: #374151 !important;
+  --gmp-place-autocomplete-placeholder-color: #9ca3af !important;
+  width: 100% !important;
+}
+
+gmp-place-autocomplete:focus-within {
+  --gmp-place-autocomplete-border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Style the internal input of the new element */
+gmp-place-autocomplete input {
+  font-family: inherit !important;
+  font-size: 14px !important;
+  padding: 8px 12px !important;
+  border: none !important;
+  outline: none !important;
+  width: 100% !important;
+  background-color: white !important;
+  color: #374151 !important;
+}
+
+/* Force override any Google styles that might cause black background */
+gmp-place-autocomplete,
+gmp-place-autocomplete *,
+gmp-place-autocomplete *::before,
+gmp-place-autocomplete *::after {
+  background-color: white !important;
+  color: #374151 !important;
+}
+
+/* Additional fixes for Google Maps elements */
+.gm-style .gm-style-iw,
+.gm-style .gm-style-iw-d,
+.pac-container {
+  background-color: white !important;
+  color: black !important;
+}
+
+/* Ensure the autocomplete element itself is styled correctly */
+gmp-place-autocomplete {
+  display: block !important;
+  width: 100% !important;
+  height: 40px !important;
+  background-color: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  box-sizing: border-box !important;
+}

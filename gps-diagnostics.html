@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Диагностика - NTruck</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .data-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .btn.secondary {
+            background: #6c757d;
+        }
+        .btn.secondary:hover {
+            background: #5a6268;
+        }
+        
+        .log {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .fix-instructions {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .fix-instructions h4 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        .fix-instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .fix-instructions li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 GPS Диагностика NTruck</h1>
+            <p>Проверка настроек GPS для водителей</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h3>📊 Общая информация</h3>
+                <div id="generalInfo"></div>
+            </div>
+            
+            <div class="section">
+                <h3>👥 Водители</h3>
+                <div id="driversInfo"></div>
+            </div>
+            
+            <div class="section">
+                <h3>🚚 Транспорт</h3>
+                <div id="vehiclesInfo"></div>
+            </div>
+            
+            <div class="section">
+                <h3>🏢 Склады</h3>
+                <div id="warehousesInfo"></div>
+            </div>
+            
+            <div class="section">
+                <h3>🔗 Связи водитель-транспорт</h3>
+                <div id="connectionsInfo"></div>
+            </div>
+            
+            <div class="section">
+                <h3>📡 GPS Тест</h3>
+                <button class="btn" onclick="testGPS()">Тестировать GPS</button>
+                <div id="gpsTestResults"></div>
+            </div>
+            
+            <div class="section">
+                <h3>🛠️ Исправления</h3>
+                <div id="fixInstructions"></div>
+            </div>
+            
+            <div class="section">
+                <h3>📝 Логи</h3>
+                <button class="btn secondary" onclick="clearLog()">Очистить</button>
+                <div id="log" class="log"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function loadAppData() {
+            try {
+                const appDataStr = localStorage.getItem('ntruck_app_data');
+                if (!appDataStr) {
+                    log('❌ Данные приложения не найдены в localStorage');
+                    return null;
+                }
+                return JSON.parse(appDataStr);
+            } catch (error) {
+                log(`❌ Ошибка загрузки данных: ${error.message}`);
+                return null;
+            }
+        }
+
+        function displayGeneralInfo() {
+            const appData = loadAppData();
+            if (!appData) return;
+
+            const drivers = appData.users?.filter(u => u.role === 'driver') || [];
+            const vehicles = appData.vehicles || [];
+            const warehouses = appData.warehouses || [];
+            const requests = appData.transferRequests || [];
+
+            document.getElementById('generalInfo').innerHTML = `
+                <div class="status info">
+                    📊 Всего водителей: ${drivers.length} | 
+                    Транспорта: ${vehicles.length} | 
+                    Складов: ${warehouses.length} | 
+                    Заявок: ${requests.length}
+                </div>
+            `;
+        }
+
+        function displayDrivers() {
+            const appData = loadAppData();
+            if (!appData) return;
+
+            const drivers = appData.users?.filter(u => u.role === 'driver') || [];
+            
+            let html = '<table class="data-table"><tr><th>ID</th><th>Имя</th><th>Логин</th><th>Телефон</th><th>Склад</th></tr>';
+            
+            drivers.forEach(driver => {
+                const warehouse = appData.warehouses?.find(w => w.id === driver.warehouseId);
+                html += `
+                    <tr>
+                        <td>${driver.id}</td>
+                        <td>${driver.firstName} ${driver.lastName}</td>
+                        <td>${driver.login}</td>
+                        <td>${driver.phoneNumber || 'Не указан'}</td>
+                        <td>${warehouse?.name || 'Не назначен'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+            document.getElementById('driversInfo').innerHTML = html;
+        }
+
+        function displayVehicles() {
+            const appData = loadAppData();
+            if (!appData) return;
+
+            const vehicles = appData.vehicles || [];
+            
+            let html = '<table class="data-table"><tr><th>ID</th><th>Название</th><th>Водитель</th><th>GPS API</th><th>Device ID</th><th>Статус</th></tr>';
+            
+            vehicles.forEach(vehicle => {
+                const hasApiKey = !!vehicle.gpsApiKey;
+                const hasDeviceId = !!(vehicle.gpsDeviceId || vehicle.trak4DeviceId);
+                const gpsStatus = hasApiKey && hasDeviceId ? 'success' : 'error';
+                
+                html += `
+                    <tr>
+                        <td>${vehicle.id}</td>
+                        <td>${vehicle.name}</td>
+                        <td>${vehicle.assignedDriver || vehicle.driverId || 'Не назначен'}</td>
+                        <td class="status ${hasApiKey ? 'success' : 'error'}">
+                            ${hasApiKey ? '✓ Настроен' : '❌ Отсутствует'}
+                        </td>
+                        <td class="status ${hasDeviceId ? 'success' : 'error'}">
+                            ${hasDeviceId ? `✓ ${vehicle.gpsDeviceId || vehicle.trak4DeviceId}` : '❌ Отсутствует'}
+                        </td>
+                        <td>${vehicle.status || 'Не указан'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+            document.getElementById('vehiclesInfo').innerHTML = html;
+        }
+
+        function displayWarehouses() {
+            const appData = loadAppData();
+            if (!appData) return;
+
+            const warehouses = appData.warehouses || [];
+            
+            let html = '<table class="data-table"><tr><th>ID</th><th>Название</th><th>Адрес</th><th>Координаты</th><th>Сотрудник</th></tr>';
+            
+            warehouses.forEach(warehouse => {
+                const hasCoords = !!(warehouse.coordinates?.lat && warehouse.coordinates?.lng);
+                const employee = appData.users?.find(u => u.id === warehouse.assignedEmployee);
+                
+                html += `
+                    <tr>
+                        <td>${warehouse.id}</td>
+                        <td>${warehouse.name}</td>
+                        <td>${warehouse.fullAddress}</td>
+                        <td class="status ${hasCoords ? 'success' : 'error'}">
+                            ${hasCoords ? `✓ ${warehouse.coordinates.lat}, ${warehouse.coordinates.lng}` : '❌ Не настроены'}
+                        </td>
+                        <td>${employee ? `${employee.firstName} ${employee.lastName}` : 'Не назначен'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+            document.getElementById('warehousesInfo').innerHTML = html;
+        }
+
+        function displayConnections() {
+            const appData = loadAppData();
+            if (!appData) return;
+
+            const drivers = appData.users?.filter(u => u.role === 'driver') || [];
+            const vehicles = appData.vehicles || [];
+            
+            let html = '<table class="data-table"><tr><th>Водитель</th><th>Транспорт</th><th>GPS Настройки</th><th>Статус</th></tr>';
+            
+            drivers.forEach(driver => {
+                const driverFullName = `${driver.firstName} ${driver.lastName}`;
+                const vehicle = vehicles.find(v => 
+                    v.driverId === driver.id || 
+                    v.assignedDriver === driver.id ||
+                    v.assignedDriver === driverFullName
+                );
+                
+                if (vehicle) {
+                    const hasApiKey = !!vehicle.gpsApiKey;
+                    const hasDeviceId = !!(vehicle.gpsDeviceId || vehicle.trak4DeviceId);
+                    const gpsComplete = hasApiKey && hasDeviceId;
+                    
+                    html += `
+                        <tr>
+                            <td>${driverFullName}</td>
+                            <td>${vehicle.name}</td>
+                            <td class="status ${gpsComplete ? 'success' : 'error'}">
+                                ${gpsComplete ? '✓ Полностью настроен' : '❌ Неполная настройка'}
+                            </td>
+                            <td class="status ${gpsComplete ? 'success' : 'warning'}">
+                                ${gpsComplete ? 'Готов к работе' : 'Требует настройки'}
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr>
+                            <td>${driverFullName}</td>
+                            <td>❌ Не назначен</td>
+                            <td>❌ Нет транспорта</td>
+                            <td class="status error">Требует назначения</td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            html += '</table>';
+            document.getElementById('connectionsInfo').innerHTML = html;
+        }
+
+        async function testGPS() {
+            log('🧪 Начинаем тест GPS...');
+            
+            const appData = loadAppData();
+            if (!appData) {
+                log('❌ Не удалось загрузить данные приложения');
+                return;
+            }
+
+            const vehicles = appData.vehicles || [];
+            const vehiclesWithGPS = vehicles.filter(v => v.gpsApiKey && (v.gpsDeviceId || v.trak4DeviceId));
+            
+            if (vehiclesWithGPS.length === 0) {
+                document.getElementById('gpsTestResults').innerHTML = `
+                    <div class="status error">
+                        ❌ Нет транспорта с настроенным GPS
+                    </div>
+                `;
+                return;
+            }
+
+            let resultsHtml = '<h4>Результаты GPS тестов:</h4>';
+            
+            for (const vehicle of vehiclesWithGPS.slice(0, 3)) { // Тестируем максимум 3 транспорта
+                log(`📡 Тестируем GPS для ${vehicle.name}...`);
+                
+                try {
+                    const response = await fetch('http://localhost:3001/api/trak4/device', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            APIKey: vehicle.gpsApiKey,
+                            DeviceID: parseInt(String(vehicle.gpsDeviceId || vehicle.trak4DeviceId))
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.Device) {
+                            const device = data.Device;
+                            const lat = device.LastReport_Latitude || device.Latitude || device.Position_Latitude;
+                            const lng = device.LastReport_Longitude || device.Longitude || device.Position_Longitude;
+                            
+                            resultsHtml += `
+                                <div class="status success">
+                                    ✅ ${vehicle.name}: GPS работает (${lat}, ${lng})
+                                </div>
+                            `;
+                            log(`✅ ${vehicle.name}: GPS работает`);
+                        } else {
+                            resultsHtml += `
+                                <div class="status error">
+                                    ❌ ${vehicle.name}: Нет данных устройства
+                                </div>
+                            `;
+                            log(`❌ ${vehicle.name}: Нет данных устройства`);
+                        }
+                    } else {
+                        const errorData = await response.json();
+                        resultsHtml += `
+                            <div class="status error">
+                                ❌ ${vehicle.name}: Ошибка API (${response.status})
+                            </div>
+                        `;
+                        log(`❌ ${vehicle.name}: Ошибка API ${response.status}`);
+                    }
+                } catch (error) {
+                    resultsHtml += `
+                        <div class="status error">
+                            ❌ ${vehicle.name}: Ошибка сети
+                        </div>
+                    `;
+                    log(`❌ ${vehicle.name}: Ошибка сети - ${error.message}`);
+                }
+            }
+            
+            document.getElementById('gpsTestResults').innerHTML = resultsHtml;
+        }
+
+        function displayFixInstructions() {
+            const appData = loadAppData();
+            if (!appData) return;
+
+            const drivers = appData.users?.filter(u => u.role === 'driver') || [];
+            const vehicles = appData.vehicles || [];
+            const warehouses = appData.warehouses || [];
+            
+            let issues = [];
+            
+            // Проверяем водителей без транспорта
+            const driversWithoutVehicles = drivers.filter(driver => {
+                const driverFullName = `${driver.firstName} ${driver.lastName}`;
+                return !vehicles.find(v => 
+                    v.driverId === driver.id || 
+                    v.assignedDriver === driver.id ||
+                    v.assignedDriver === driverFullName
+                );
+            });
+            
+            if (driversWithoutVehicles.length > 0) {
+                issues.push(`Водители без транспорта: ${driversWithoutVehicles.map(d => `${d.firstName} ${d.lastName}`).join(', ')}`);
+            }
+            
+            // Проверяем транспорт без GPS
+            const vehiclesWithoutGPS = vehicles.filter(v => !v.gpsApiKey || (!v.gpsDeviceId && !v.trak4DeviceId));
+            if (vehiclesWithoutGPS.length > 0) {
+                issues.push(`Транспорт без GPS: ${vehiclesWithoutGPS.map(v => v.name).join(', ')}`);
+            }
+            
+            // Проверяем склады без координат
+            const warehousesWithoutCoords = warehouses.filter(w => !w.coordinates?.lat || !w.coordinates?.lng);
+            if (warehousesWithoutCoords.length > 0) {
+                issues.push(`Склады без координат: ${warehousesWithoutCoords.map(w => w.name).join(', ')}`);
+            }
+            
+            let html = '';
+            
+            if (issues.length === 0) {
+                html = '<div class="status success">✅ Все настройки корректны!</div>';
+            } else {
+                html = '<div class="fix-instructions"><h4>🔧 Требуются исправления:</h4><ol>';
+                issues.forEach(issue => {
+                    html += `<li>${issue}</li>`;
+                });
+                html += '</ol></div>';
+            }
+            
+            document.getElementById('fixInstructions').innerHTML = html;
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Запуск GPS диагностики...');
+            displayGeneralInfo();
+            displayDrivers();
+            displayVehicles();
+            displayWarehouses();
+            displayConnections();
+            displayFixInstructions();
+            log('✅ Диагностика завершена');
+        });
+    </script>
+</body>
+</html>
