@@ -27,15 +27,18 @@ const corsOptions = {
     }
   },
   methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: [],
   credentials: true,
-  maxAge: 86400 // 24 hours
+  maxAge: 86400, // 24 hours
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Explicitly handle preflight requests for our API route
-app.options('/api/trak4/device', cors(corsOptions));
+// Explicitly handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Логирование запросов
 app.use((req, res, next) => {
