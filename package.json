@@ -1,47 +1,18 @@
 {
-  "name": "ntruck-warehouse-transfer",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "ntruck-railway",
+  "version": "1.0.0",
+  "description": "nTruck GPS Backend for Railway",
+  "main": "backend/server.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build-with-types": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "start": "cd backend && node server.js",
+    "build": "echo 'No build step required'",
+    "dev": "cd backend && node server.js"
   },
   "dependencies": {
-    "@googlemaps/js-api-loader": "^1.16.10",
-    "@hookform/resolvers": "^3.3.2",
-    "@types/google.maps": "^3.58.1",
-    "clsx": "^2.0.0",
-    "cors": "^2.8.5",
-    "date-fns": "^2.30.0",
-    "express": "^5.1.0",
-    "lucide-react": "^0.294.0",
-    "node-fetch": "^2.7.0",
-    "nodemon": "^3.1.10",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-hook-form": "^7.48.2",
-    "react-router-dom": "^6.20.0",
-    "zod": "^3.22.4"
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
   },
-  "devDependencies": {
-    "@types/react": "^18.2.37",
-    "@types/react-dom": "^18.2.15",
-    "@typescript-eslint/eslint-plugin": "^6.10.0",
-    "@typescript-eslint/parser": "^6.10.0",
-    "@vitejs/plugin-react": "^4.1.0",
-    "autoprefixer": "^10.4.16",
-    "concurrently": "^9.2.1",
-    "eslint": "^8.53.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.4",
-    "postcss": "^8.4.31",
-    "tailwindcss": "^3.3.5",
-    "typescript": "^5.2.2",
-    "vite": "^4.5.0",
-    "wait-on": "^9.0.1"
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
