@@ -64,6 +64,14 @@ export class GPSTrackingService {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return this.PROXY_BASE_URL;
     }
+    
+    // In production, use environment variable for backend URL
+    const backendUrl = import.meta.env.VITE_API_URL;
+    if (backendUrl) {
+      return `${backendUrl}/api/trak4`;
+    }
+    
+    // Fallback to direct API (will fail due to CORS)
     return this.API_BASE_URL;
   }
 

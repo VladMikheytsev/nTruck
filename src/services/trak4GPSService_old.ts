@@ -82,7 +82,7 @@ export interface VehicleGPSData {
 
 export class Trak4GPSService {
   private static readonly API_BASE_URL = 'https://api-v3.trak-4.com';
-  private static readonly PROXY_URL = 'http://localhost:3002/api/trak4/device';
+  private static readonly PROXY_URL = 'http://localhost:3002/api/trak4/device'; // Development proxy
   private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   private static readonly RATE_LIMIT_CACHE_DURATION = 60 * 1000; // 1 minute for rate limit fallback
 

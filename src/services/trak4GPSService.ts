@@ -82,12 +82,31 @@ export interface VehicleGPSData {
 
 export class Trak4GPSService {
   private static readonly API_BASE_URL = 'https://api-v3.trak-4.com';
-  private static readonly PROXY_URL = 'http://localhost:3002/api/trak4/device';
+  private static readonly PROXY_URL = 'http://localhost:3002/api/trak4/device'; // Development proxy
   private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   private static readonly RATE_LIMIT_CACHE_DURATION = 60 * 1000; // 1 minute for rate limit fallback
 
   private static gpsCache = new Map<string, VehicleGPSData>();
   private static rateLimitCache = new Map<string, { timestamp: number; data: VehicleGPSData }>();
+
+  /**
+   * Determine which API URL to use based on environment
+   */
+  private static getApiUrl(): string {
+    // In development, use proxy server
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return this.PROXY_URL;
+    }
+    
+    // In production, use environment variable for backend URL
+    const backendUrl = import.meta.env.VITE_API_URL;
+    if (backendUrl) {
+      return `${backendUrl}/api/trak4/device`;
+    }
+    
+    // Fallback to direct API (will fail due to CORS)
+    return this.API_BASE_URL;
+  }
 
   /**
    * Get GPS data for a specific vehicle using Trak-4 API
@@ -116,7 +135,7 @@ export class Trak4GPSService {
       console.log(`📡 Fetching GPS data for vehicle: ${vehicleId}, DeviceID: ${deviceId}`);
 
       // Make API request through proxy
-      const response = await fetch(this.PROXY_URL, {
+      const response = await fetch(this.getApiUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -283,7 +302,7 @@ export class Trak4GPSService {
     try {
       console.log(`🧪 Testing Trak-4 API connection: DeviceID ${deviceId}`);
       
-      const response = await fetch(this.PROXY_URL, {
+      const response = await fetch(this.getApiUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
