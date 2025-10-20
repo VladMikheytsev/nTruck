@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Backend Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🚂 Railway Backend Test</h1>
+    
+    <div class="test info">
+        <h3>📋 Инструкции:</h3>
+        <ol>
+            <li>Убедитесь, что Railway backend запущен</li>
+            <li>Введите URL вашего Railway backend</li>
+            <li>Нажмите "Тест Health Check"</li>
+            <li>Нажмите "Тест GPS API"</li>
+        </ol>
+    </div>
+
+    <div class="test">
+        <h3>🔗 Railway Backend URL:</h3>
+        <input type="text" id="railwayUrl" placeholder="https://your-app.railway.app" style="width: 100%; padding: 10px; margin: 10px 0;">
+        <button class="btn-primary" onclick="testHealth()">❤️ Тест Health Check</button>
+        <button class="btn-success" onclick="testGPS()">📡 Тест GPS API</button>
+        <button class="btn-danger" onclick="clearResults()">🗑️ Очистить</button>
+    </div>
+
+    <div id="results"></div>
+
+    <div class="test info">
+        <h3>🔧 Если тесты не проходят:</h3>
+        <ol>
+            <li>Проверьте, что Railway backend запущен</li>
+            <li>Убедитесь, что Root Directory установлен на <code>backend</code></li>
+            <li>Проверьте переменные окружения в Railway</li>
+            <li>Посмотрите логи в Railway Dashboard</li>
+        </ol>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testHealth() {
+            const url = document.getElementById('railwayUrl').value;
+            if (!url) {
+                addResult('❌ Введите Railway URL', 'error');
+                return;
+            }
+
+            addResult('🔍 Тестируем Health Check...', 'info');
+
+            try {
+                const response = await fetch(`${url}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult(`✅ Health Check успешен!<br><pre>${JSON.stringify(data, null, 2)}</pre>`, 'success');
+                } else {
+                    addResult(`❌ Health Check failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Ошибка подключения: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGPS() {
+            const url = document.getElementById('railwayUrl').value;
+            if (!url) {
+                addResult('❌ Введите Railway URL', 'error');
+                return;
+            }
+
+            addResult('🔍 Тестируем GPS API...', 'info');
+
+            try {
+                const response = await fetch(`${url}/api/trak4/device`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        APIKey: 'Xx7MWwsUEOBjRVr7NfDQc9PEBiEN1qna',
+                        DeviceID: 153332
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult(`✅ GPS API успешен!<br><pre>${JSON.stringify(data, null, 2)}</pre>`, 'success');
+                } else {
+                    addResult(`❌ GPS API failed: ${response.status} ${response.statusText}<br><pre>${JSON.stringify(data, null, 2)}</pre>`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Ошибка GPS API: ${error.message}`, 'error');
+            }
+        }
+
+        // Автоматически заполнить URL если есть
+        window.addEventListener('load', () => {
+            const url = new URLSearchParams(window.location.search).get('url');
+            if (url) {
+                document.getElementById('railwayUrl').value = url;
+            }
+        });
+    </script>
+</body>
+</html>
