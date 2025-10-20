@@ -99,14 +99,14 @@ const FleetManagement: React.FC = () => {
           `• Правильность API ключа\n` +
           `• Правильность Device ID\n` +
           `• Интернет соединение\n` +
-          `• Работу прокси сервера (localhost:3002)`);
+          `• Доступность backend: ${API_CONFIG.API_URL}`);
       }
     } catch (error) {
       console.error('❌ GPS Test Error:', error);
       alert(`❌ Ошибка тестирования GPS!\n\n` +
         `Автомобиль: ${vehicle.name}\n` +
         `Ошибка: ${error}\n\n` +
-        `Убедитесь, что прокси сервер запущен на localhost:3002`);
+        `Убедитесь, что backend доступен: ${API_CONFIG.API_URL}`);
     } finally {
       setTestingGPS(null);
     }
