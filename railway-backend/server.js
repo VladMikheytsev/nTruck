@@ -72,6 +72,35 @@ app.options('/api/trak4/device', (req, res) => {
   return res.status(403).end();
 });
 
+// Simple probe endpoint for base path (helps uptime checks and debugging)
+app.options('/api/trak4', (req, res) => {
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Vary', 'Origin');
+    }
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.sendStatus(204);
+  }
+  return res.status(403).end();
+});
+
+app.get('/api/trak4', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin && (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development')) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+  }
+  return res.json({
+    status: 'OK',
+    message: 'Trak-4 proxy is running. Use POST /api/trak4/device',
+    endpoints: ['GET /health', 'POST /api/trak4/device']
+  });
+});
+
 // Логирование запросов
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString();
