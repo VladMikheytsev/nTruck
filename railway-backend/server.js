@@ -57,6 +57,20 @@ app.use(express.json());
 
 // Explicitly handle preflight requests
 app.options('*', cors(corsOptions));
+app.options('/api/trak4/device', (req, res) => {
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Vary', 'Origin');
+    }
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.sendStatus(204);
+  }
+  return res.status(403).end();
+});
 
 // Логирование запросов
 app.use((req, res, next) => {
