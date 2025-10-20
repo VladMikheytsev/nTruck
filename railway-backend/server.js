@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3002;
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://navitruck.app',
   process.env.FRONTEND_URL,
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
 ].filter(Boolean);
@@ -32,6 +33,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// Explicitly handle preflight requests for our API route
+app.options('/api/trak4/device', cors(corsOptions));
 
 // Логирование запросов
 app.use((req, res, next) => {
