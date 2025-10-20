@@ -77,9 +77,11 @@ export class GPSTrackingService {
 
   // Check if we should use mock data in development
   private static shouldUseMockData(): boolean {
-    // ОТКЛЮЧЕНО: Используем только реальные GPS данные
-    // Никогда не используем mock данные
-    return false;
+    // В продакшене используем mock данные, если backend недоступен
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return true; // Используем mock данные в продакшене
+    }
+    return false; // В разработке используем реальные данные
   }
 
   // Check cache for GPS data
