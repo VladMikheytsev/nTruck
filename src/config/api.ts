@@ -3,17 +3,17 @@
  */
 
 const isDevelopment = import.meta.env.DEV;
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+const rawApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3002').replace(/\/$/, '');
 
 export const API_CONFIG = {
   // Base URL для прокси сервера
-  PROXY_BASE_URL: `${apiUrl}/api/trak4`,
+  PROXY_BASE_URL: `${rawApiUrl}/api/trak4`,
   
   // URL для получения данных устройства
-  PROXY_DEVICE_URL: `${apiUrl}/api/trak4/device`,
+  PROXY_DEVICE_URL: `${rawApiUrl}/api/trak4/device`,
   
   // Health check endpoint
-  HEALTH_CHECK_URL: `${apiUrl}/health`,
+  HEALTH_CHECK_URL: `${rawApiUrl}/health`,
   
   // Trak-4 API (прямой доступ, не используется в production)
   TRAK4_API_URL: 'https://api-v3.trak-4.com',
@@ -22,7 +22,7 @@ export const API_CONFIG = {
   IS_DEVELOPMENT: isDevelopment,
   
   // Full API URL
-  API_URL: apiUrl,
+  API_URL: rawApiUrl,
 };
 
 // Логируем конфигурацию в development

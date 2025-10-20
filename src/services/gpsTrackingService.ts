@@ -65,8 +65,8 @@ export class GPSTrackingService {
       return this.PROXY_BASE_URL;
     }
     
-    // In production, use environment variable for backend URL
-    const backendUrl = import.meta.env.VITE_API_URL;
+    // In production, use environment variable for backend URL (normalize trailing slash)
+    const backendUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '');
     if (backendUrl) {
       return `${backendUrl}/api/trak4`;
     }

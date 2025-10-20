@@ -4,6 +4,7 @@ import { Vehicle } from '../types';
 import { Plus, Edit, Trash2, Truck, Users, Weight, Gauge, Calendar, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { GPSTrackingService } from '../services/gpsTrackingService';
+import { API_CONFIG } from '../config/api';
 
 const FleetManagement: React.FC = () => {
   const { state, dispatch } = useAppContext();
