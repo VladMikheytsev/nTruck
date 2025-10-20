@@ -34,6 +34,24 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
+// Early CORS headers for all requests (explicit) + fast OPTIONS 204
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Vary', 'Origin');
+    }
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+  }
+  next();
+});
+
 app.use(cors(corsOptions));
 app.use(express.json());
 
