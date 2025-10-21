@@ -439,46 +439,7 @@ const Dashboard: React.FC = () => {
       {/* Tab Content */}
       {activeTab === 'requests' && (
         <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div 
-          className={`card p-4 cursor-pointer transition-colors ${
-            statusFilter === 'all' ? 'ring-2 ring-primary-500' : 'hover:bg-gray-50'
-          }`}
-          onClick={() => setStatusFilter('all')}
-        >
-          <div className="flex items-center">
-            <FileText className="h-5 w-5 text-gray-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Всего заявок</p>
-              <p className="text-lg font-semibold text-gray-900">{statusCounts.all}</p>
-            </div>
-          </div>
-        </div>
-
-        {Object.entries(statusConfig).map(([status, config]) => {
-          const Icon = config.icon;
-          return (
-            <div
-              key={status}
-              className={`card p-4 cursor-pointer transition-colors ${
-                statusFilter === status ? 'ring-2 ring-primary-500' : 'hover:bg-gray-50'
-              }`}
-              onClick={() => setStatusFilter(status as TransferStatus)}
-            >
-              <div className="flex items-center">
-                <Icon className="h-5 w-5 text-gray-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-500">{config.label}</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {statusCounts[status as keyof typeof statusCounts]}
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+          {/* Stats Cards - removed per user request */}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
