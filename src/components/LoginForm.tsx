@@ -346,7 +346,7 @@ const LoginForm: React.FC = () => {
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20">
         <div>
               <h2 className="mt-6 text-center text-3xl font-extrabold text-white drop-shadow-lg">
-            Вход в систему NTruck
+            Вход в систему Navitruck
           </h2>
               <p className="mt-2 text-center text-sm text-white/80 drop-shadow-md">
             Система управления складскими перемещениями
