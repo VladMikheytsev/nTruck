@@ -319,6 +319,45 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* KPI summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Всего заявок</p>
+              <p className="text-2xl font-semibold text-gray-900">{statusCounts.all}</p>
+            </div>
+            <FileText className="h-6 w-6 text-gray-400" />
+          </div>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">В процессе</p>
+              <p className="text-2xl font-semibold text-yellow-700">{statusCounts.in_progress}</p>
+            </div>
+            <Clock className="h-6 w-6 text-yellow-600" />
+          </div>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Завершено</p>
+              <p className="text-2xl font-semibold text-green-700">{statusCounts.completed}</p>
+            </div>
+            <CheckCircle className="h-6 w-6 text-green-600" />
+          </div>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Отменено</p>
+              <p className="text-2xl font-semibold text-red-700">{statusCounts.cancelled}</p>
+            </div>
+            <XCircle className="h-6 w-6 text-red-600" />
+          </div>
+        </div>
+      </div>
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
           {state.currentUser?.role === 'driver' ? 'Мои заявки' : 'Dashboard'}
@@ -329,6 +368,14 @@ const Dashboard: React.FC = () => {
             : 'Обзор системы управления складскими операциями'
           }
         </p>
+        {/* Quick system counters */}
+        {state.currentUser?.role !== 'driver' && (
+          <div className="mt-3 flex items-center space-x-4 text-sm text-gray-600">
+            <span className="flex items-center"><Truck className="h-4 w-4 mr-1" /> {state.vehicles?.length || 0} авто</span>
+            <span className="flex items-center"><Building2 className="h-4 w-4 mr-1" /> {state.warehouses?.length || 0} складов</span>
+            <span className="flex items-center"><TrendingUp className="h-4 w-4 mr-1" /> {state.routes?.length || 0} маршрутов</span>
+          </div>
+        )}
       </div>
 
       {/* Tabs - скрыты для водителей */}
