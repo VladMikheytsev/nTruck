@@ -1,9 +1,22 @@
 const express = require('express');
 const cors = require('cors');
 // Using built-in fetch (Node.js 18+)
+const mysql = require('mysql2/promise');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
+
+// MySQL pool
+const dbPool = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+  port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
 // CORS configuration for production
 const allowedOrigins = [
@@ -169,6 +182,18 @@ app.get('/health', (req, res) => {
   };
   
   res.json(healthcheck);
+});
+
+// Simple DB health endpoint
+app.get('/db/health', async (req, res) => {
+  try {
+    const conn = await dbPool.getConnection();
+    const [rows] = await conn.query('SELECT 1 as ok');
+    conn.release();
+    return res.json({ ok: true, rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // Root endpoint
