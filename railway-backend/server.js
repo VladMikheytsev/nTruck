@@ -73,7 +73,7 @@ app.use((req, res, next) => {
 });
 
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // Explicitly handle preflight requests
 app.options('*', cors(corsOptions));
@@ -217,12 +217,15 @@ app.get('/db/health', async (req, res) => {
 // Application data persistence (JSON blob)
 app.get('/api/app-data', async (req, res) => {
   try {
+    console.log('📥 GET /api/app-data');
     const conn = await dbPool.getConnection();
     const [rows] = await conn.query('SELECT data, updated_at FROM app_data WHERE id = 1');
     conn.release();
     if (!Array.isArray(rows) || rows.length === 0) {
+      console.log('ℹ️ No app_data row yet');
       return res.json({ data: null, updatedAt: null });
     }
+    console.log('✅ Returning app_data');
     return res.json({ data: rows[0].data, updatedAt: rows[0].updated_at });
   } catch (e) {
     console.error('❌ /api/app-data GET failed:', e);
@@ -236,6 +239,9 @@ app.put('/api/app-data', async (req, res) => {
     if (!req.body || typeof req.body !== 'object') {
       return res.status(400).json({ error: 'INVALID_BODY' });
     }
+    console.log('📤 PUT /api/app-data', {
+      size: Buffer.byteLength(JSON.stringify(req.body), 'utf8')
+    });
     const payloadJson = JSON.stringify(req.body);
     const conn = await dbPool.getConnection();
     await conn.query(
@@ -245,6 +251,7 @@ app.put('/api/app-data', async (req, res) => {
     );
     const [rows] = await conn.query('SELECT updated_at FROM app_data WHERE id = 1');
     conn.release();
+    console.log('✅ Saved app_data (PUT)');
     return res.json({ ok: true, updatedAt: rows && rows[0] ? rows[0].updated_at : null });
   } catch (e) {
     console.error('❌ /api/app-data PUT failed:', e);
@@ -258,6 +265,9 @@ app.post('/api/app-data', async (req, res) => {
     if (!req.body || typeof req.body !== 'object') {
       return res.status(400).json({ error: 'INVALID_BODY' });
     }
+    console.log('📤 POST /api/app-data', {
+      size: Buffer.byteLength(JSON.stringify(req.body), 'utf8')
+    });
     const payloadJson = JSON.stringify(req.body);
     const conn = await dbPool.getConnection();
     await conn.query(
@@ -267,6 +277,7 @@ app.post('/api/app-data', async (req, res) => {
     );
     const [rows] = await conn.query('SELECT updated_at FROM app_data WHERE id = 1');
     conn.release();
+    console.log('✅ Saved app_data (POST)');
     return res.json({ ok: true, updatedAt: rows && rows[0] ? rows[0].updated_at : null });
   } catch (e) {
     console.error('❌ /api/app-data POST failed:', e);
