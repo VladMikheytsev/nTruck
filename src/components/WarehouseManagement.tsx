@@ -6,6 +6,7 @@ import AddressAutocomplete from './AddressAutocomplete';
 import WarehouseIcon from './WarehouseIcon';
 import ColorPicker from './ColorPicker';
 import { GeocodingService, GeocodeResult } from '../services/geocodingService';
+import { Database } from '../utils/database';
 
 const WarehouseManagement: React.FC = () => {
   const { state, dispatch } = useAppContext();
@@ -38,6 +39,18 @@ const WarehouseManagement: React.FC = () => {
   const handleDeleteWarehouse = (warehouseId: string) => {
     if (window.confirm('Вы уверены, что хотите удалить этот склад?')) {
       dispatch({ type: 'DELETE_WAREHOUSE', payload: warehouseId });
+      // Немедленно сохраняем изменения на сервер, не дожидаясь эффекта
+      const nextWarehouses = state.warehouses.filter(w => w.id !== warehouseId);
+      const dataToSave = {
+        users: state.users,
+        warehouses: nextWarehouses,
+        transferRequests: state.transferRequests,
+        vehicles: state.vehicles,
+        shifts: state.shifts,
+        workSchedules: state.workSchedules,
+        routes: state.routes,
+      };
+      void Database.save(dataToSave as any);
     }
   };
 
