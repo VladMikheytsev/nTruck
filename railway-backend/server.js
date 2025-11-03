@@ -48,7 +48,7 @@ const allowedOrigins = [
 const corsOptions = {
   // Разрешаем любой Origin (cors сам вернёт конкретный Origin из запроса)
   origin: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: [],
   credentials: true,
@@ -64,7 +64,7 @@ app.use((req, res, next) => {
     res.header('Vary', 'Origin');
   }
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
@@ -73,7 +73,7 @@ app.use((req, res, next) => {
 });
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 // Explicitly handle preflight requests
 app.options('*', cors(corsOptions));
@@ -85,7 +85,7 @@ app.options('/api/trak4/device', (req, res) => {
       res.header('Vary', 'Origin');
     }
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.sendStatus(204);
   }
@@ -101,7 +101,7 @@ app.options('/api/trak4', (req, res) => {
       res.header('Vary', 'Origin');
     }
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.sendStatus(204);
   }
@@ -248,6 +248,28 @@ app.put('/api/app-data', async (req, res) => {
     return res.json({ ok: true, updatedAt: rows && rows[0] ? rows[0].updated_at : null });
   } catch (e) {
     console.error('❌ /api/app-data PUT failed:', e);
+    return res.status(500).json({ error: 'DB_ERROR', message: e.message });
+  }
+});
+
+// Accept POST as well, for broader client compatibility
+app.post('/api/app-data', async (req, res) => {
+  try {
+    if (!req.body || typeof req.body !== 'object') {
+      return res.status(400).json({ error: 'INVALID_BODY' });
+    }
+    const payloadJson = JSON.stringify(req.body);
+    const conn = await dbPool.getConnection();
+    await conn.query(
+      `INSERT INTO app_data (id, data) VALUES (1, CAST(? AS JSON))
+       ON DUPLICATE KEY UPDATE data = VALUES(data)`,
+      [payloadJson]
+    );
+    const [rows] = await conn.query('SELECT updated_at FROM app_data WHERE id = 1');
+    conn.release();
+    return res.json({ ok: true, updatedAt: rows && rows[0] ? rows[0].updated_at : null });
+  } catch (e) {
+    console.error('❌ /api/app-data POST failed:', e);
     return res.status(500).json({ error: 'DB_ERROR', message: e.message });
   }
 });
