@@ -18,6 +18,24 @@ const dbPool = mysql.createPool({
   queueLimit: 0
 });
 
+// Ensure required tables exist
+(async () => {
+  try {
+    const conn = await dbPool.getConnection();
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS app_data (
+        id INT NOT NULL PRIMARY KEY,
+        data JSON NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+    conn.release();
+    console.log('✅ MySQL table ensured: app_data');
+  } catch (e) {
+    console.error('❌ Failed ensuring DB schema:', e);
+  }
+})();
+
 // CORS configuration for production
 const allowedOrigins = [
   'http://localhost:3000',
@@ -196,6 +214,44 @@ app.get('/db/health', async (req, res) => {
   }
 });
 
+// Application data persistence (JSON blob)
+app.get('/api/app-data', async (req, res) => {
+  try {
+    const conn = await dbPool.getConnection();
+    const [rows] = await conn.query('SELECT data, updated_at FROM app_data WHERE id = 1');
+    conn.release();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.json({ data: null, updatedAt: null });
+    }
+    return res.json({ data: rows[0].data, updatedAt: rows[0].updated_at });
+  } catch (e) {
+    console.error('❌ /api/app-data GET failed:', e);
+    return res.status(500).json({ error: 'DB_ERROR', message: e.message });
+  }
+});
+
+app.put('/api/app-data', async (req, res) => {
+  try {
+    // Basic validation: require object
+    if (!req.body || typeof req.body !== 'object') {
+      return res.status(400).json({ error: 'INVALID_BODY' });
+    }
+    const payloadJson = JSON.stringify(req.body);
+    const conn = await dbPool.getConnection();
+    await conn.query(
+      `INSERT INTO app_data (id, data) VALUES (1, CAST(? AS JSON))
+       ON DUPLICATE KEY UPDATE data = VALUES(data)`,
+      [payloadJson]
+    );
+    const [rows] = await conn.query('SELECT updated_at FROM app_data WHERE id = 1');
+    conn.release();
+    return res.json({ ok: true, updatedAt: rows && rows[0] ? rows[0].updated_at : null });
+  } catch (e) {
+    console.error('❌ /api/app-data PUT failed:', e);
+    return res.status(500).json({ error: 'DB_ERROR', message: e.message });
+  }
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
@@ -244,6 +300,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('📋 Endpoints:');
   console.log(`   🔗 Proxy:  POST /api/trak4/device`);
   console.log(`   ❤️  Health: GET  /health`);
+  console.log(`   🗄️  App Data: GET/PUT /api/app-data`);
   console.log('');
   console.log('✅ Server is ready to accept connections');
   console.log('');

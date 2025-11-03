@@ -485,35 +485,36 @@ const AppContext = createContext<{
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Initialize with data from database or mock data
+  // Initialize with data from server database or mock data
   React.useEffect(() => {
-    const savedData = Database.load();
-    
-    if (savedData) {
-      dispatch({
-        type: 'INITIALIZE_DATA',
-        payload: savedData,
-      });
-    } else {
-      // Initialize with mock data if no saved data
-      const initialData = {
-        users: mockUsers,
-        warehouses: mockWarehouses,
-        transferRequests: [],
-        vehicles: mockVehicles,
-        shifts: mockShifts,
-        workSchedules: mockWorkSchedules,
-        routes: mockRoutes,
-      };
-      
-      dispatch({
-        type: 'INITIALIZE_DATA',
-        payload: initialData,
-      });
-      
-      // Save initial data to database
-      Database.save(initialData);
-    }
+    (async () => {
+      try {
+        const savedData = await Database.load();
+        if (savedData) {
+          dispatch({
+            type: 'INITIALIZE_DATA',
+            payload: savedData,
+          });
+        } else {
+          const initialData = {
+            users: mockUsers,
+            warehouses: mockWarehouses,
+            transferRequests: [],
+            vehicles: mockVehicles,
+            shifts: mockShifts,
+            workSchedules: mockWorkSchedules,
+            routes: mockRoutes,
+          };
+          dispatch({
+            type: 'INITIALIZE_DATA',
+            payload: initialData,
+          });
+          await Database.save(initialData);
+        }
+      } catch (e) {
+        console.error('❌ Failed to initialize app data:', e);
+      }
+    })();
   }, []);
 
   // Auto-save to database whenever state changes (except currentUser)
@@ -528,7 +529,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         workSchedules: state.workSchedules,
         routes: state.routes,
       };
-      Database.save(dataToSave);
+      void Database.save(dataToSave);
     }
   }, [
     state.users,

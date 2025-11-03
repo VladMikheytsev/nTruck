@@ -1,5 +1,6 @@
-// Simple localStorage-based database simulation
+// Server-backed database utility over HTTP
 import { User, Warehouse, TransferRequest, Vehicle, Shift, WorkSchedule, Route } from '../types';
+import { API_CONFIG } from '../config/api';
 
 interface DatabaseSchema {
   users: User[];
@@ -12,6 +13,7 @@ interface DatabaseSchema {
 }
 
 const DATABASE_KEY = 'ntruck_database';
+const BASE_URL = API_CONFIG.API_URL;
 
 // Serialize dates for localStorage
 const serializeData = (data: any): any => {
@@ -34,52 +36,62 @@ const deserializeData = (data: any): any => {
 };
 
 export class Database {
-  static save(data: DatabaseSchema): void {
+  static async save(data: DatabaseSchema): Promise<void> {
     try {
       const serializedData = serializeData(data);
-      localStorage.setItem(DATABASE_KEY, JSON.stringify(serializedData));
-      console.log('✅ Data saved to database');
+      const res = await fetch(`${BASE_URL}/api/app-data`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(serializedData),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      console.log('✅ Data saved to server database');
     } catch (error) {
-      console.error('❌ Error saving to database:', error);
+      console.error('❌ Error saving to server database:', error);
     }
   }
 
-  static load(): DatabaseSchema | null {
+  static async load(): Promise<DatabaseSchema | null> {
     try {
-      const savedData = localStorage.getItem(DATABASE_KEY);
-      if (!savedData) return null;
-      
-      const parsedData = JSON.parse(savedData);
-      const deserializedData = deserializeData(parsedData);
-      console.log('✅ Data loaded from database');
-      return deserializedData;
+      const res = await fetch(`${BASE_URL}/api/app-data`, { method: 'GET' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = await res.json();
+      if (!payload || !payload.data) return null;
+      const deserializedData = deserializeData(payload.data);
+      console.log('✅ Data loaded from server database');
+      return deserializedData as DatabaseSchema;
     } catch (error) {
-      console.error('❌ Error loading from database:', error);
+      console.error('❌ Error loading from server database:', error);
       return null;
     }
   }
 
-  static clear(): void {
+  static async clear(): Promise<void> {
     try {
-      localStorage.removeItem(DATABASE_KEY);
-      console.log('✅ Database cleared');
+      // Store an empty object to effectively clear
+      await fetch(`${BASE_URL}/api/app-data`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      console.log('✅ Server database cleared');
     } catch (error) {
-      console.error('❌ Error clearing database:', error);
+      console.error('❌ Error clearing server database:', error);
     }
   }
 
-  static export(): string {
-    const data = Database.load();
+  static async export(): Promise<string> {
+    const data = await Database.load();
     return JSON.stringify(data, null, 2);
   }
 
-  static import(jsonData: string): boolean {
+  static async import(jsonData: string): Promise<boolean> {
     try {
       const data = JSON.parse(jsonData);
-      Database.save(data);
+      await Database.save(data);
       return true;
     } catch (error) {
-      console.error('❌ Error importing data:', error);
+      console.error('❌ Error importing data to server:', error);
       return false;
     }
   }
