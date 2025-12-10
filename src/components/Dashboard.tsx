@@ -29,7 +29,8 @@ import {
   Play,
   Plus,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Printer
 } from 'lucide-react';
 import DatabaseManager from './DatabaseManager';
 import { Trak4GPSService, VehicleGPSData } from '../services/trak4GPSService';
@@ -39,6 +40,7 @@ import { TrackingDiagnostics } from '../utils/trackingDiagnostics';
 import { RouteProgressTrackingService } from '../services/routeProgressTrackingService';
 import { RouteProgress } from '../types';
 import WarehouseIcon from './WarehouseIcon';
+import { generateBOL } from '../utils/bolGenerator';
 
 const Dashboard: React.FC = () => {
   const { state, dispatch } = useAppContext();
@@ -763,6 +765,14 @@ const TransferRequestCard: React.FC<TransferRequestCardProps> = ({
     }
   };
 
+  const handlePrintBOL = async () => {
+    try {
+      await generateBOL(request, { warehouses: state.warehouses, users: state.users });
+    } catch (e) {
+      // Ошибки уже обрабатываются внутри генератора
+    }
+  };
+
   const handleStartWork = () => {
     const oldStatus = request.status;
     const newStatus = 'in_progress' as TransferStatus;
@@ -1307,6 +1317,13 @@ const TransferRequestCard: React.FC<TransferRequestCardProps> = ({
       {/* Actions */}
       <div className="flex justify-between items-center pt-3 border-t-2 border-dashed border-gray-400">
         <div className="flex space-x-2">
+          <button
+            onClick={handlePrintBOL}
+            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded"
+            title="Печать BOL"
+          >
+            <Printer className="h-4 w-4" />
+          </button>
           {currentUser?.role === 'admin' || currentUser?.id === request.createdBy ? (
             <>
                 <button
@@ -3423,6 +3440,9 @@ const RequestsListView: React.FC = () => {
                   № Заявки
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Печать
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Дата создания
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -3456,6 +3476,15 @@ const RequestsListView: React.FC = () => {
                 <tr key={request.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     #{request.id.slice(-8).toUpperCase()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => generateBOL(request, { warehouses: state.warehouses, users: state.users })}
+                      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded"
+                      title="Печать BOL"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div>
